@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "@langchain/community": "^0.0.35",
+    "@langchain/core": "^0.1.43",
+    "@langchain/openai": "^0.0.18",
+    "langchain": "^0.1.25",
     "mailparser": "^3.6.9",
     "node-imap": "^0.9.6"
   }
