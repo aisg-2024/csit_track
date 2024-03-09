@@ -3,7 +3,7 @@ const { ChatPromptTemplate } = require("@langchain/core/prompts");
 const { StringOutputParser } = require("@langchain/core/output_parsers");
 const fs = require("fs");
 
-const OPENAI_API_KEY = "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";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const fraudDetectionPrompt = `
   prompt: Detect and flag any potential fraud elements within the given email.
@@ -75,7 +75,7 @@ async function main() {
     openAIApiKey: OPENAI_API_KEY,
   });
 
-  const emailInput = fs.readFileSync("normal.txt", "utf8").trim();
+  const emailInput = fs.readFileSync("fraud.txt", "utf8").trim();
 
   const prompt = ChatPromptTemplate.fromMessages([
     ["system", "You are a world class technical documentation writer." + fraudDetectionPrompt],
