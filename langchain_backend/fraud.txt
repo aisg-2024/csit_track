@@ -1,0 +1,14 @@
+Subject: Urgent Action Required - Your Account is Compromised
+
+Dear valued customer,
+
+We regret to inform you that we have detected suspicious activity on your account. It appears that your account is being compromised by unauthorized access.
+
+To prevent any further unauthorized access and secure your account, we urgently require you to verify your identity by providing your account credentials. Please click on the following link to update your account details immediately: [maliciouslink.com]
+
+Failure to take immediate action may result in permanent account closure or financial loss. Your prompt attention to this matter is highly appreciated.
+
+Thank you for your cooperation.
+
+Sincerely,
+Customer Support Team
