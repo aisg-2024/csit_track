@@ -1,19 +1,21 @@
 {
     "name": "CSIT LLM Fraud Checker",
     "version": "1.0",
-    "manifest_version": 2,
+    "manifest_version": 3,
     "description": "CSIT LLM Fraud Checker",
     "permissions": [
       "identity",
       "contextMenus",
       "background",
-      "notifications",
+      "notifications"
+    ],
+    "host_permissions": [
       "*://*.google.com/*",
       "https://www.googleapis.com/*",
       "https://*.googleusercontent.com/*"
     ],
     "background": {
-      "scripts": ["base64.js", "background.js"]
+      "service_worker": "./background.js"
     },
     "icons": {
       "16": "./img/icon16.png",
@@ -31,9 +33,12 @@
       },
       "default_title": "LLM Fraud Checker for your Emails"
     },
-    "content_security_policy": "script-src https://*.google.com 'unsafe-eval'; object-src 'self'",
+    "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'",
+      "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval'; child-src 'self';"
+    },
     "oauth2": {
-      "client_id": "<clientid>",
+      "client_id": "184141298407-396pshlc9gdrpstp2bkkmkev0umb7igp.apps.googleusercontent.com",
       "scopes": [
         "https://www.googleapis.com/auth/gmail.modify",
         "https://mail.google.com/"

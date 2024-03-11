@@ -2,6 +2,7 @@
 chrome.identity.getAuthToken(
 	{'interactive': true},
 	function(){
+		console.log("STARTING:")
 	  //load Google's javascript client libraries
 		window.gapi_onload = authorize;
 		loadScript('https://apis.google.com/js/client.js');
@@ -31,7 +32,7 @@ function loadScript(url){
 function authorize(){
   gapi.auth.authorize(
 		{
-			client_id: '<clientid>',
+			client_id: '184141298407-396pshlc9gdrpstp2bkkmkev0umb7igp.apps.googleusercontent.com',
 			immediate: true,
 			scope: 'https://www.googleapis.com/auth/gmail.modify'
 		},
@@ -45,23 +46,39 @@ function authorize(){
 	as plain text in chrome extension
 */
 async function gmailAPILoaded(){
-    const messages = getMessages();
-    const messageBatch = getMessageDetails(messages);
-    
+	await getMessages();
 }
 
+var extractField = function(json, fieldName) {
+	return json.payload.headers.filter(function(header) {
+	  return header.name === fieldName;
+	})[0].value;
+  };
 
 //Retrieves the latest 50 unread Gmail messages
 async function getMessages(){
-    return await gapi.client.gmail.users.messages.list({
-		userId: 'me',
-        maxResults: 50,
-        q: "is:unread"
-	}); //returns a promise
+	let response;
+	try{
+		response = await gapi.client.gmail.users.messages.list({
+			userId: 'me',
+			maxResults: 50,
+			q: "is:unread"
+		});
+	} catch (err) {
+		document.getElementById('content').innerText = err.message;
+		return;
+	}
+	const messages = response.result.messages;
+	if (!messages || messages.length == 0) {
+	document.getElementById('content').innerText = 'No messages found.';
+	return;
+	}
+	document.getElementById('content').innerText = messages;
+	console.log(messages)
 }
 
 //takes in an array of messages from the getMessages response
-async function getMessageDetails(messages){
+ function getMessageDetails(messages){
   var batch = new gapi.client.newBatch();
 
 	for(var i=0; i<messages.length; i++){
@@ -72,5 +89,11 @@ async function getMessageDetails(messages){
 	}
 
 	batch.then()
+	var date = extractField(response, "Date");
+	var subject = extractField(response, "Subject")
+	var part = message.parts.filter(function(part) {
+		return part.mimeType == 'text/html';
+	  });
+	var html = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
 }
 
