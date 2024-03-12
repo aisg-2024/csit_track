@@ -1,3 +1,7 @@
+// const { ChatOpenAI } = require("@langchain/openai");
+// const { ChatPromptTemplate } = require("@langchain/core/prompts");
+// const { StringOutputParser } = require("@langchain/core/output_parsers");
+
 //Initialise with 0 frauds detected
 chrome.action.setBadgeText({ text: "0" })
 
@@ -12,9 +16,11 @@ chrome.identity.getAuthToken(
 	{'interactive': true}, async (token) => {
 		console.log("Token received: ", token);
 		messageIDList = await fetchGmailList(token);
-		console.log("Message IDs: ", messageIDList);
+		// console.log("Message IDs");
+		// console.log(messageIDList);
 		messageList = await fetchBatch(token, messageIDList, 'batch_taskjet_google_lib_api', 'https://www.googleapis.com/batch/gmail/v1');
-		console.log("Messages: ", messageList);
+		console.log("Messages");
+		console.log(messageList);
 	}
 );
 
@@ -27,10 +33,11 @@ const fetchGmailList = (token) => {
 		const headers = new Headers({
 			'Authorization' : 'Bearer ' + token,
 			'Content-Type': 'application/json'
-		})
+		});
 		const queryParams = { headers };
-		let maxEmailResults = 50
-		let queryCondition = 'is:unread'
+		let maxEmailResults = 50;
+		let queryCondition = 'is:unread';
+		let labelID = 'INDEX';
 		//Send GET request to Gmail REST API and retrieve first 50 unread messages
 		fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults='+maxEmailResults+'&q='+queryCondition, queryParams)
 		.then((response) => response.json()) // Transform the data into json
@@ -89,7 +96,7 @@ const fetchBatch = ( accessToken, messageIds, boundary, batchUrl ) => {
 		})
 		.then((response) => response.text())
 		.then(function(text) {
-			console.log('batchBody', batchBody, 'accessToken', accessToken, 'text', text);
+			// console.log('batchBody', batchBody, 'text', text);
 			return resolve(parseBatchResponse(text));
 		})
 		.catch(function (err) {
@@ -99,164 +106,161 @@ const fetchBatch = ( accessToken, messageIds, boundary, batchUrl ) => {
 }
 
 /*
-Function that supports batch response parsing 
-Credit: https://gist.github.com/moorage/6f599f4dc85ae52c505f5e304c326935
+Function that parses the batch response 
+Adapted from: https://stackoverflow.com/questions/33289711/parsing-gmail-batch-response-in-javascript
 */
-function parsePart(part) {
-	var p = part.substring(part.indexOf('{'), part.lastIndexOf('}') + 1)
-	return JSON.parse(p)
-  }
+const parseBatchResponse = (repsonse) => {
+	var parsedMessages = [];
+	const bodies = repsonse.split('\r\n');
+	for (const body of bodies) {
+		if (body[0] === '{') {
+			const parsedBody = parseMessage(body);
+			var sender = parsedBody.headers.from;
+			var replyTo = parsedBody.headers["reply-to"];
+			var returnPath = parsedBody.headers["return-path"];
+			var subject = parsedBody.headers.subject;
+			var plainText = parsedBody.textPlain;
+			var trimmedMessage = "From: " + sender + "\n\n"
+									+ "Reply to: " + replyTo + "\n\n"
+									+ "Return Path: " + returnPath + "\n\n"
+									+ "Subject: " + subject + "\n\n"
+									+ plainText;
+			parsedMessages.push(trimmedMessage);
+		}
+	}
+	return parsedMessages;
+}
 
 /*
-Function that parses the batch response 
-Credit: https://gist.github.com/moorage/6f599f4dc85ae52c505f5e304c326935
+Converts a string into a base-64 decodable format
+Credit: https://stackoverflow.com/questions/5234581/base64url-decoding-via-javascript
 */
-const parseBatchResponse = (response) => {
-	// Not the same delimiter in the response as was specified in the request,
-	// so we have to extract it.
-	var delimiter = response.substring(0, response.indexOf('\r\n'))
-	var parts = response.split(delimiter)
-	// The first part will always be an empty string. Just remove it.
-	parts.shift()
-	// The last part will be the "--". Just remove it.
-	parts.pop()
-  
-	var result = []
-	for (var i = 0; i < parts.length; i++) {
-	  var part = parts[i]
-	  try {
-		result.push(parsePart(part))
-	  } catch (e) {
-		// A Google API error will contain a JSON response with an array 'errors'.
-		// If the parsing should fail, we mimic this.
-		result.push({
-		  errors: [{ message: part, response: response, parts: parts, error: e }]
-		})
+const base64_decode = (input) => {
+	// Replace non-url compatible chars with base64 standard chars
+	input = input
+		.replace(/-/g, '+')
+		.replace(/_/g, '/');
+
+	// Pad out with standard base64 required padding characters
+	var pad = input.length % 4;
+	if(pad) {
+	  if(pad === 1) {
+		throw new Error('InvalidLengthError: Input base64url string is the wrong length to determine padding');
 	  }
+	  input += new Array(5-pad).join('=');
 	}
 
-	return result
+	return input;
 }
 
 /*
-Function that generates a URL query string with parameters for 
-requesting specific fields and metadata for Gmail messages
-Credit: https://www.labnol.org/gmail-urlfetch-api-230325
+Decodes a url safe Base64 string to its original representation
+Credit: https://github.com/EmilTholin/gmail-api-parse-message/blob/master/lib/index.js
 */
-const getUrlParts = () => {
-	const metadata = ['Subject', 'From', 'To'].map((key) => `metadataHeaders=${key}`).join('&');
-	const data = {
-		fields: 'payload/headers',
-		format: `metadata`,
-	};
-	const fields = Object.entries(data)
-		.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-		.join('&');
-	return `${fields}&${metadata}`;
-};
-
+const urlB64Decode = (string) => {
+	return string
+	 ? atob(base64_decode(string))
+	 : '';
+  }
+  
 /*
-Function that constructs a request object for fetching a specific message 
-from the Gmail API with an OAuth token
-Adapted from: https://www.labnol.org/gmail-urlfetch-api-230325
+Takes the header array filled with objects and transforms it into a more pleasant key-value object.
+Credit: https://github.com/EmilTholin/gmail-api-parse-message/blob/master/lib/index.js
 */
-const createIndivMessageRequest = (messageId, token) => {
-	const GMAIL_API_ENDPOINT = `https://www.googleapis.com/gmail/v1/users/me/messages`;
-	const urlparts = getUrlParts();
-	const headers = new Headers({
-		'Authorization' : 'Bearer ' + token,
-		'Content-Type': 'application/json'
-	})
-	return {
-	url: `${GMAIL_API_ENDPOINT}/${messageId}?${urlparts}`,
-	headers: { headers },
-	muteHttpExceptions: true,
-	};
+const indexHeaders = (headers) => {
+if (!headers) {
+	return {};
+} else {
+	return headers.reduce(function (result, header) {
+	result[header.name.toLowerCase()] = header.value;
+	return result;
+	}, {});
+}
 }
 
 /*
-Function that makes multiple requests to the Gmail API in parallel
-as a batch request for higher efficiency
-Adapted from: https://www.labnol.org/gmail-urlfetch-api-230325
+Function that parses individual message bodies
+Credit: https://github.com/EmilTholin/gmail-api-parse-message/blob/master/lib/index.js
 */
-const makeBatchRequest = (messageIds, messageList) => {
-	const messageRequests = messageIds.map(createIndivMessageRequest);
-	const responses = UrlFetchApp.fetchAll(messageRequests);
-	responses.forEach((response) => {
-		const messageData = JSON.parse(response);
-		const { error, payload: { headers = [] } = {} } = messageData;
-		if (error) {
-			console.log('Error', error);
-		} else {
-			headers.forEach(({ name, value }) => {
-				messageList.app(name + ': ' + value);
-			});
+const parseMessage = (response) => {
+	var response = JSON.parse(response)
+	var result = {
+	  id: response.id,
+	  threadId: response.threadId,
+	  labelIds: response.labelIds,
+	  snippet: response.snippet,
+	  historyId: response.historyId
+	};
+	if (response.internalDate) {
+	  result.internalDate = parseInt(response.internalDate);
+	}
+  
+	var payload = response.payload;
+	if (!payload) {
+	  return result;
+	}
+  
+	var headers = indexHeaders(payload.headers);
+	result.headers = headers;
+  
+	var parts = [payload];
+	var firstPartProcessed = false;
+  
+	while (parts.length !== 0) {
+	  var part = parts.shift();
+	  if (part.parts) {
+		parts = parts.concat(part.parts);
+	  }
+	  if (firstPartProcessed) {
+		headers = indexHeaders(part.headers);
+	  }
+  
+	  if (!part.body) {
+		continue;
+	  }
+  
+	  var isHtml = part.mimeType && part.mimeType.indexOf('text/html') !== -1;
+	  var isPlain = part.mimeType && part.mimeType.indexOf('text/plain') !== -1;
+	  var isAttachment = Boolean(part.body.attachmentId || (headers['content-disposition'] && headers['content-disposition'].toLowerCase().indexOf('attachment') !== -1));
+	  var isInline = headers['content-disposition'] && headers['content-disposition'].toLowerCase().indexOf('inline') !== -1;
+  
+	  if (isHtml && !isAttachment) {
+		result.textHtml = urlB64Decode(part.body.data);
+	  } else if (isPlain && !isAttachment) {
+		result.textPlain = urlB64Decode(part.body.data);
+	  } else if (isAttachment) {
+		var body = part.body;
+		if(!result.attachments) {
+		  result.attachments = [];
 		}
-	});	
-};
-// const getGmailDetails = (messageList, token) => {
-// 	return new Promise((resolve, reject) => {
-// 		var emails = []
-// 		const headers = new Headers({
-// 			'Authorization' : 'Bearer ' + token,
-// 			'Content-Type': 'application/json'
-// 		})
-// 		const batch_header = headers.copy()
-// 		batch_header['Content-Type'] = 'multipart/mixed; boundary="email_id"'
-// 		var data = ''
-// 		var ctr = 0
-// 		for (message in messageList) {
-// 			data += f'--email_id\nContent-Type: application/http\n\nGET /gmail/v1/users/me/messages/{message["id"]}?format=full\n\n';
-// 			if ctr == 99:
-// 				data += '--email_id--'
-// 				print(data)
-// 				r = requests.post(f"https://www.googleapis.com/batch/gmail/v1", 
-// 								headers=batch_header, data=data)
-// 				bodies = r.content.decode().split('\r\n')
-// 				for body in bodies:
-// 					if body.startswith('{'):
-// 						parsed_body = json.loads(body)
-// 						emails.append(parsed_body)
-// 				ctr = 0
-// 				data = ''
-// 				continue
-// 			ctr+=1
-// 		data += '--email_id--'
-// 		r = requests.post(f"https://www.googleapis.com/batch/gmail/v1", 
-// 						headers=batch_header, data=data)
-// 		bodies = r.content.decode().split('\r\n')
-// 		for body in bodies:
-// 			if body.startswith('{'):
-// 				parsed_body = json.loads(body)
-// 				emails.append(parsed_body)
-// 	for(var i=0; i<messageList.length; i++){
-// 		const headers = new Headers({
-// 			'Authorization' : 'Bearer ' + token,
-// 			'Content-Type': 'application/json'
-// 		})
-// 		const queryParams = { headers };
-// 		fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+messageList[i].id, queryParams)
-// 		.then((response) => response.json()) // Transform the data into json
-// 		.then(function(data) {
-// 			return resolve(data.messages);
-// 		})
-// 		.catch(function (err) {
-// 			return reject(err);
-// 		  });
-// 	}
-// 	var date = extractField(response, "Date");
-// 	var subject = extractField(response, "Subject")
-// 	var part = message.parts.filter(function(part) {
-// 		return part.mimeType == 'text/html';
-// 	  });
-// 	var html = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-// 	});
-// }
-
-function extractField (json, fieldName) {
-	return json.payload.headers.filter(function(header) {
-	  return header.name === fieldName;
-	})[0].value;
+		result.attachments.push({
+		  filename: part.filename,
+		  mimeType: part.mimeType,
+		  size: body.size,
+		  attachmentId: body.attachmentId,
+		  headers: indexHeaders(part.headers)
+		});
+	  } else if (isInline) {
+	  var body = part.body;
+	  if(!result.inline) {
+		result.inline = [];
+	  }
+	  result.inline.push({
+		filename: part.filename,
+		mimeType: part.mimeType,
+		size: body.size,
+		attachmentId: body.attachmentId,
+		headers: indexHeaders(part.headers)
+	  });
+	}
+  
+	  firstPartProcessed = true;
+	}
+  
+	return result;
   };
+
+
+
 
 

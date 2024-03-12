@@ -1,6 +1,8 @@
 {
   "dependencies": {
+    "base-64": "^1.0.0",
     "gapi": "^0.0.3",
+    "gmail-api-parse-message": "^2.1.2",
     "googleapis": "^133.0.0"
   }
 }
