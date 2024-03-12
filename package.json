@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "gapi": "^0.0.3",
     "googleapis": "^133.0.0"
   }
 }
