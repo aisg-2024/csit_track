@@ -6,7 +6,7 @@ const fs = require("fs");
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const fraudDetectionPrompt = `
-  prompt: Detect and flag any potential fraud elements within the given email.
+  prompt: Detect and flag any potential fraud elements within the given email in an ordered manner:
 
   fraud_elements:
   - Unrealistic Demands/Threats:
@@ -68,6 +68,8 @@ const fraudDetectionPrompt = `
     - Attachments leading to malicious websites
     - Attachment files of high-risk types likely to contain malware (e.g., .scr, .exe, .zip)
   - Whole Email is Just a Hyperlink Leading to Malicious Website
+
+  if the email does not contain fraud elements, reply with "this email is clean"
   `;
 
 async function main() {
@@ -75,7 +77,7 @@ async function main() {
     openAIApiKey: OPENAI_API_KEY,
   });
 
-  const emailInput = fs.readFileSync("fraud.txt", "utf8").trim();
+  const emailInput = fs.readFileSync("normal.txt", "utf8").trim();
 
   const prompt = ChatPromptTemplate.fromMessages([
     ["system", "You are a world class technical documentation writer." + fraudDetectionPrompt],
@@ -88,7 +90,18 @@ async function main() {
 
   try {
     const response = await llmChain.invoke();
-    console.log(response);
+    console.log("Response from language model:", response);
+
+    let fraudDetected = 0; // Initialize variable to store fraud detection result
+
+    // Review response, set fraudDetected to 1 if keyword "fraud" is found
+    if (response.toLowerCase().includes("fraud")) {
+        console.log("Potential fraud detected.");
+        fraudDetected = 1;
+    } else {
+        console.log("No fraud detected.");
+        fraudDetected = 0;
+    }
   } catch (error) {
     console.error(error);
   }
