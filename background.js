@@ -19,8 +19,13 @@ chrome.identity.getAuthToken(
 		// console.log("Message IDs");
 		// console.log(messageIDList);
 		messageList = await fetchBatch(token, messageIDList, 'batch_taskjet_google_lib_api', 'https://www.googleapis.com/batch/gmail/v1');
-		console.log("Messages");
-		console.log(messageList);
+		// console.log("Messages");
+		// console.log(messageList);
+		// await updatePopupPage(messageList);
+		chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
+			chrome.runtime.sendMessage({messages:messageList},function(response){
+			});
+		});
 	}
 );
 
@@ -259,6 +264,35 @@ const parseMessage = (response) => {
   
 	return result;
   };
+
+/*
+Function that sends information to popup.js that the html popup is running on
+Adapted from: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/sendMessage
+*/
+// const updatePopupPage = (messageList) => {
+	// chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+	// 	console.log(tabs);
+	// 	chrome.tabs.sendMessage(tabs[0].id, {
+	// 		origin: "background.js",
+	// 		messageList: messageList
+	// 	})
+	// 	.then(handleResponse, handleError); 
+	// });
+	// chrome.runtime.sendMessage({
+	// 	origin: "background.js",
+	// 	messageList: messageList
+	// })
+	// .then(handleResponse, handleError);
+// 	chrome.storage.sync.set({ 'messages': messageList});
+// }
+
+// const handleResponse = (message) => {
+// 	console.log(`Message from the popup script: ${message.response}`);
+// }
+  
+// const handleError = (error) => {
+// 	console.log(`Popup Comms Error: ${error}`);
+// }
 
 
 
