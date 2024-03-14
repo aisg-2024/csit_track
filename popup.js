@@ -6,9 +6,13 @@ chrome.runtime.sendMessage({data:"Handshake"},function(response){
 chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
     messageList = message.messages;
     var str = '';
-    messageList.forEach(function(message) {
-        str += '<div id="emailContent">' + '<p>' + message + '</p>' + '</div>';
-    });       
+    if (messageList == []){
+        str += '<div class="loader"></div>';
+    } else {
+        messageList.forEach(function(message) {
+            str += '<div id="emailContent">' + '<p>' + message + '</p>' + '</div>';
+        });       
+    }
     document.getElementById("messages").innerHTML = str;
 });
 

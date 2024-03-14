@@ -9,25 +9,51 @@ chrome.action.setBadgeText({ text: "0" })
 var messageIDList;
 //Array of full gmail messages extracted from the messageIDList
 var messageList;
+//Boolean to determine when GPT has finished analysing all fetched emails
+var allEmailAnalysed = false;
+//Array of binary decisions from GPT: 1 means fraud detected, 0 means no fraud
+var decisionList;
+//Array of supporting analysis from GPT for decision made
+var analysisList;
 
-//Main function powering the extraction of email contents 
+//Main function powering the extraction of email contents and sending them to LLM backend
 chrome.identity.getAuthToken(
 	//Retrieve Oauth2 token for Google user
 	{'interactive': true}, async (token) => {
-		console.log("Token received: ", token);
+		// console.log("Token received: ", token);
 		messageIDList = await fetchGmailList(token);
 		// console.log("Message IDs");
 		// console.log(messageIDList);
 		messageList = await fetchBatch(token, messageIDList, 'batch_taskjet_google_lib_api', 'https://www.googleapis.com/batch/gmail/v1');
 		// console.log("Messages");
 		// console.log(messageList);
-		// await updatePopupPage(messageList);
-		chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
-			chrome.runtime.sendMessage({messages:messageList},function(response){
-			});
-		});
+		var count = 0;
+		for(var message in messageList){
+			var responseJson = sendToLLM(message);
+			decisionList.push(responseJson.fraudDetected);
+			analysisList.push(responseJson.response);
+			count++;
+		}
+		if(count == messageList.length){
+			allEmailAnalysed = true;
+		}
 	}
 );
+
+/*
+Function that sends the LLM results to popup.js which the html popup is running on
+popup.js initiates a handshake to the background script which the background scipt
+responds with LLM results (or empty array if analysis is yet to complete)
+*/
+chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
+	if(allEmailAnalysed == false){
+		chrome.runtime.sendMessage({messages:[]},function(response){
+		});
+	} else {
+		chrome.runtime.sendMessage({messages:messageList},function(response){
+		});
+	}
+});
 
 /*
 Returns a promise that yields the gmail list requested
@@ -263,36 +289,30 @@ const parseMessage = (response) => {
 	}
   
 	return result;
-  };
+};
 
-/*
-Function that sends information to popup.js that the html popup is running on
-Adapted from: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/sendMessage
-*/
-// const updatePopupPage = (messageList) => {
-	// chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-	// 	console.log(tabs);
-	// 	chrome.tabs.sendMessage(tabs[0].id, {
-	// 		origin: "background.js",
-	// 		messageList: messageList
-	// 	})
-	// 	.then(handleResponse, handleError); 
-	// });
-	// chrome.runtime.sendMessage({
-	// 	origin: "background.js",
-	// 	messageList: messageList
-	// })
-	// .then(handleResponse, handleError);
-// 	chrome.storage.sync.set({ 'messages': messageList});
-// }
-
-// const handleResponse = (message) => {
-// 	console.log(`Message from the popup script: ${message.response}`);
-// }
-  
-// const handleError = (error) => {
-// 	console.log(`Popup Comms Error: ${error}`);
-// }
+const sendToLLM = (message) => {
+	return new Promise((resolve, reject) => {
+		const queryParams = {
+			method: 'GET',
+			url: 'https://textapis.p.rapidapi.com/text',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-RapidAPI-Key': '74cc79460fmsh3c6d0abcb93703cp140eb4jsn8975796733b1',
+				'X-RapidAPI-Host': 'textapis.p.rapidapi.com',
+			},
+			body: message
+		};
+		//Send GET request to Gmail REST API and retrieve first 50 unread messages
+		fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=', queryParams)
+		.then(function(response) {
+			return resolve(response.json());
+		})
+		.catch(function (err) {
+			return reject(err);
+		});
+	});
+}
 
 
 
