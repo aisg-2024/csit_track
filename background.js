@@ -1,7 +1,3 @@
-// const { ChatOpenAI } = require("@langchain/openai");
-// const { ChatPromptTemplate } = require("@langchain/core/prompts");
-// const { StringOutputParser } = require("@langchain/core/output_parsers");
-
 //Initialise with 0 frauds detected
 chrome.action.setBadgeText({ text: "0" })
 
@@ -27,15 +23,22 @@ chrome.identity.getAuthToken(
 		messageList = await fetchBatch(token, messageIDList, 'batch_taskjet_google_lib_api', 'https://www.googleapis.com/batch/gmail/v1');
 		// console.log("Messages");
 		// console.log(messageList);
-		var count = 0;
+		var totalCount = 0;
+		var fraudCount = 0;
 		for(var message in messageList){
 			var responseJson = sendToLLM(message);
 			decisionList.push(responseJson.fraudDetected);
 			analysisList.push(responseJson.response);
-			count++;
+			totalCount++;
+			if(parseInt(responseJson.fraudDetected) == 1){
+				fraudCount++;
+			}
 		}
-		if(count == messageList.length){
+		if(totalCount == messageList.length){
 			allEmailAnalysed = true;
+			chrome.action.setBadgeText({ text: fraudCount })
+			chrome.action.setBadgeBackgroundColor({ color: "red" });
+			chrome.action.setBadgeTextColor({ color: "white" })
 		}
 	}
 );
@@ -49,9 +52,13 @@ chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
 	if(allEmailAnalysed == false){
 		chrome.runtime.sendMessage({messages:[]},function(response){
 		});
+		// chrome.runtime.sendMessage({decisions:[], analysis:[]},function(response){
+		// });
 	} else {
 		chrome.runtime.sendMessage({messages:messageList},function(response){
 		});
+		// chrome.runtime.sendMessage({decisions:decisionList, analysis:messageList},function(response){
+		// });
 	}
 });
 

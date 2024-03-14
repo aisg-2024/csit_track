@@ -19,12 +19,16 @@
       border: 1px solid #ccc;
       padding: 10px;
     }
+    #messages{
+      margin-top: 50px;
+    }
     .loader {
       border: 16px solid #f3f3f3; /* Light grey */
       border-top: 16px solid #3498db; /* Blue */
       border-radius: 50%;
-      width: 120px;
-      height: 120px;
+      margin: auto;
+      width: 25%;
+      aspect-ratio : 1 / 1;
       animation: spin 2s linear infinite;
     }
 
@@ -37,6 +41,7 @@
     <div class="container mt-3" style="width: 450px;">
     <h1 class="text-center">CSIT LLM Fraud Checker</h1>
       <div id = "messages">
+        <div class="loader"></div>
       </div>
     </div>
 </body>
