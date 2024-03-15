@@ -7,9 +7,11 @@ var messageIDList;
 var messageList;
 //Boolean to determine when GPT has finished analysing all fetched emails
 var allEmailAnalysed = false;
-//Array of binary decisions from GPT: 1 means fraud detected, 0 means no fraud
-var decisionList;
-//Array of supporting analysis from GPT for decision made
+//Array of senders of emails identified as fraud by GPT
+var senderList;
+//Array of topics of emails identified as fraud by GPT
+var topicList;
+//Array of supporting analysis from GPT for giving fraud decision
 var analysisList;
 
 //Main function powering the extraction of email contents and sending them to LLM backend
@@ -26,19 +28,21 @@ chrome.identity.getAuthToken(
 		var totalCount = 0;
 		var fraudCount = 0;
 		for(var message in messageList){
-			var responseJson = sendToLLM(message);
-			decisionList.push(responseJson.fraudDetected);
-			analysisList.push(responseJson.response);
-			totalCount++;
+			var responseJson = await sendToLLM(message);
+			//in JSON response 1 means fraud detected, 0 means no fraud
 			if(parseInt(responseJson.fraudDetected) == 1){
 				fraudCount++;
+				analysisList.push(responseJson.response);
+				senderList.push(extractSender(message));
+				topicList.push(extractTopic(message));
 			}
+			totalCount++;
 		}
 		if(totalCount == messageList.length){
 			allEmailAnalysed = true;
-			chrome.action.setBadgeText({ text: fraudCount })
+			chrome.action.setBadgeText({ text: fraudCount });
 			chrome.action.setBadgeBackgroundColor({ color: "red" });
-			chrome.action.setBadgeTextColor({ color: "white" })
+			chrome.action.setBadgeTextColor({ color: "white" });
 		}
 	}
 );
@@ -52,12 +56,12 @@ chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
 	if(allEmailAnalysed == false){
 		chrome.runtime.sendMessage({messages:[]},function(response){
 		});
-		// chrome.runtime.sendMessage({decisions:[], analysis:[]},function(response){
+		// chrome.runtime.sendMessage({topics:[], senders:[], analysis:[]},function(response){
 		// });
 	} else {
 		chrome.runtime.sendMessage({messages:messageList},function(response){
 		});
-		// chrome.runtime.sendMessage({decisions:decisionList, analysis:messageList},function(response){
+		// chrome.runtime.sendMessage({topics:topicList, senders:senderList, analysis:analysisList},function(response){
 		// });
 	}
 });
@@ -298,6 +302,9 @@ const parseMessage = (response) => {
 	return result;
 };
 
+/*
+Function that sends email messages to LLM and awaits LLM analysis results
+*/
 const sendToLLM = (message) => {
 	return new Promise((resolve, reject) => {
 		const queryParams = {
@@ -319,6 +326,20 @@ const sendToLLM = (message) => {
 			return reject(err);
 		});
 	});
+}
+
+/*
+Function that extracts sender from text email message
+*/
+const extractSender = (message) => {
+	return message.split("From: ")[1].split("\n\n")[0].trim();
+}
+
+/*
+Function that extracts subject from text email message
+*/
+const extractTopic = (message) => {
+	return message.split("Subject: ")[1].split("\n\n")[0].trim();
 }
 
 
