@@ -13,7 +13,8 @@
     "host_permissions": [
       "*://*.google.com/*",
       "https://www.googleapis.com/*",
-      "https://*.googleusercontent.com/*"
+      "https://*.googleusercontent.com/*",
+      "https://langchain-backend-k9yh.onrender.com/detect-fraud"
     ],
     "background": {
       "service_worker": "./background.js"

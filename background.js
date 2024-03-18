@@ -8,11 +8,11 @@ var messageList;
 //Boolean to determine when GPT has finished analysing all fetched emails
 var allEmailAnalysed = false;
 //Array of senders of emails identified as fraud by GPT
-var senderList;
+var senderList= [];
 //Array of topics of emails identified as fraud by GPT
-var topicList;
+var topicList = [];
 //Array of supporting analysis from GPT for giving fraud decision
-var analysisList;
+var analysisList = [];
 
 //Main function powering the extraction of email contents and sending them to LLM backend
 chrome.identity.getAuthToken(
@@ -27,8 +27,9 @@ chrome.identity.getAuthToken(
 		// console.log(messageList);
 		var totalCount = 0;
 		var fraudCount = 0;
-		for(var message in messageList){
+		messageList.forEach(async function (message) {
 			var responseJson = await sendToLLM(message);
+			console.log(responseJson);
 			//in JSON response 1 means fraud detected, 0 means no fraud
 			if(parseInt(responseJson.fraudDetected) == 1){
 				fraudCount++;
@@ -37,13 +38,18 @@ chrome.identity.getAuthToken(
 				topicList.push(extractTopic(message));
 			}
 			totalCount++;
-		}
-		if(totalCount == messageList.length){
-			allEmailAnalysed = true;
-			chrome.action.setBadgeText({ text: fraudCount });
-			chrome.action.setBadgeBackgroundColor({ color: "red" });
-			chrome.action.setBadgeTextColor({ color: "white" });
-		}
+			if(totalCount == messageList.length){
+				allEmailAnalysed = true;
+				chrome.action.setBadgeText({ text: fraudCount.toString() });
+				if(fraudCount > 0){
+					chrome.action.setBadgeBackgroundColor({ color: "red" });
+					chrome.action.setBadgeTextColor({ color: "white" });
+				} else {
+					chrome.action.setBadgeBackgroundColor({ color: "green" });
+					chrome.action.setBadgeTextColor({ color: "white" });
+				}
+			}
+		});
 	}
 );
 
@@ -54,15 +60,15 @@ responds with LLM results (or empty array if analysis is yet to complete)
 */
 chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
 	if(allEmailAnalysed == false){
-		chrome.runtime.sendMessage({messages:[]},function(response){
-		});
-		// chrome.runtime.sendMessage({topics:[], senders:[], analysis:[]},function(response){
+		// chrome.runtime.sendMessage({messages:[]},function(response){
 		// });
+		chrome.runtime.sendMessage({topics:[], senders:[], analysis:[]},function(response){
+		});
 	} else {
-		chrome.runtime.sendMessage({messages:messageList},function(response){
-		});
-		// chrome.runtime.sendMessage({topics:topicList, senders:senderList, analysis:analysisList},function(response){
+		// chrome.runtime.sendMessage({messages:messageList},function(response){
 		// });
+		chrome.runtime.sendMessage({topics:topicList, senders:senderList, analysis:analysisList},function(response){
+		});
 	}
 });
 
@@ -307,18 +313,16 @@ Function that sends email messages to LLM and awaits LLM analysis results
 */
 const sendToLLM = (message) => {
 	return new Promise((resolve, reject) => {
+		const messageJSON = JSON.stringify({
+			"emailContent": message
+		});
 		const queryParams = {
-			method: 'GET',
-			url: 'https://textapis.p.rapidapi.com/text',
-			headers: {
-				'Content-Type': 'application/json',
-				'X-RapidAPI-Key': '74cc79460fmsh3c6d0abcb93703cp140eb4jsn8975796733b1',
-				'X-RapidAPI-Host': 'textapis.p.rapidapi.com',
-			},
-			body: message
+			method: 'POST',
+			url: 'https://langchain-backend-k9yh.onrender.com/detect-fraud',
+			headers: {"Content-type": "application/json; charset=UTF-8"},
+			body: messageJSON
 		};
-		//Send GET request to Gmail REST API and retrieve first 50 unread messages
-		fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=', queryParams)
+		fetch('https://langchain-backend-k9yh.onrender.com/detect-fraud', queryParams)
 		.then(function(response) {
 			return resolve(response.json());
 		})
