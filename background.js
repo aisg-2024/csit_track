@@ -29,7 +29,7 @@ chrome.identity.getAuthToken(
 		var fraudCount = 0;
 		messageList.forEach(async function (message) {
 			var responseJson = await sendToLLM(message);
-			console.log(responseJson);
+			// console.log(responseJson);
 			//in JSON response 1 means fraud detected, 0 means no fraud
 			if(parseInt(responseJson.fraudDetected) == 1){
 				fraudCount++;
@@ -62,12 +62,12 @@ chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
 	if(allEmailAnalysed == false){
 		// chrome.runtime.sendMessage({messages:[]},function(response){
 		// });
-		chrome.runtime.sendMessage({topics:[], senders:[], analysis:[]},function(response){
+		chrome.runtime.sendMessage({topics:[], senders:[], analysis:[], analysed:false},function(response){
 		});
 	} else {
 		// chrome.runtime.sendMessage({messages:messageList},function(response){
 		// });
-		chrome.runtime.sendMessage({topics:topicList, senders:senderList, analysis:analysisList},function(response){
+		chrome.runtime.sendMessage({topics:topicList, senders:senderList, analysis:analysisList, analysed:true},function(response){
 		});
 	}
 });

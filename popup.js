@@ -22,11 +22,12 @@ Function that handles latest messages from background.js
 // });
 
 chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
-    senderList = message.senders
-    topicList = message.topics
+    senderList = message.senders;
+    topicList = message.topics;
     analysisList = message.analysis;
+    analysed = message.analysed;
     var str = '';
-    if (analysisList.length == 0){
+    if (analysed == false){
         str += '<div class="loader"></div>';
     } else {
         senderList.forEach((sender, index) => {
