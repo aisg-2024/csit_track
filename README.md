@@ -14,6 +14,7 @@ Users may then exercise caution when reading these emails in their inbox.
 Before you begin, ensure you have met the following requirements:
 
 - npm and Node.JS installed on local machine
+- Gmail API Service enabled on Google Cloud Console
 
 
 ## Installation
@@ -37,7 +38,7 @@ Unpack and install the extension to chrome:
 
 ![image](https://github.com/aisg-2024/csit_track/assets/111041948/1a227ab2-99f3-4227-ae45-9678c747b8ec)
 
-Enable Gmail API Service
+Add credentials to Gmail API Service
 - Navigate to **Gmail API servic**e in Google Cloud Console
 - Click on **+ Create Credentials**
 - Choose Oauth2.0 Client ID
@@ -54,13 +55,19 @@ To use the extension, follow the following steps:
 - A red badge indicates that potential frauds have been detected and the number of potential frauds is displayed on the badge
 - A green badge indicates that among all the fetched emails no potential frauds have been detected
 4) If the badge changes to red, close and reopen the extension popup to show the flagged emails accompanied by LLM analysis
-  
+
+## Under the Hood
+
+The extension is powered by a background worker JS script which is responsible for fetching the first 50 unread gmails from the linked Google account, extracting the necessary information from them, parsing them into a suitable format, and posting them to the LLM backend through batch requests. The response from the LLM backend is then received and processed by this script.
+
+The popup page is served as a HTML page running a separate popup JS script for managing dynamic content. Responses from the LLM backend are sent from the background worker script to this popup script through runtime messages and displayed dynamically on the popup page.
 
 ## License
 This project is open-sourced under the MIT license. See the LICENSE file for more information.
 
 ## Acknowledgements
-Google for providing the Gmail API.
+- Google for providing the Gmail API
+- Functions adapted from various sources acknowledged under code comments
 
 ## Contact
 Should you have any questions, feedback, or require support, please don't hesitate to reach out to the repository maintainers or submit an issue in the GitHub repository.
