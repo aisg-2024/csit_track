@@ -62,9 +62,6 @@ The extension is powered by a background worker JS script which is responsible f
 
 The popup page is served as a HTML page running a separate popup JS script for managing dynamic content. Responses from the LLM backend are sent from the background worker script to this popup script through runtime messages and displayed dynamically on the popup page.
 
-## License
-This project is open-sourced under the MIT license. See the LICENSE file for more information.
-
 ## Acknowledgements
 - Google for providing the Gmail API
 - Functions adapted from various sources acknowledged under code comments
