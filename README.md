@@ -39,12 +39,23 @@ Unpack and install the extension to chrome:
 ![image](https://github.com/aisg-2024/csit_track/assets/111041948/1a227ab2-99f3-4227-ae45-9678c747b8ec)
 
 Add credentials to Gmail API Service
-- Navigate to **Gmail API servic**e in Google Cloud Console
+- Navigate to **Gmail API service** in Google Cloud Console
 - Click on **+ Create Credentials**
 - Choose Oauth2.0 Client ID
 - Under application type, choose **Chrome Extension**
 - Under **Item ID**, use the Extension ID obtained from earlier
 - Click **Create**
+
+Configure OAuth consent
+- Navigate to **Menu menu > APIs & Services > OAuth consent screen**.
+- Select **External** user type, then click **Create**
+- Complete the app registration form, then click **Save and Continue**
+- Under **Test users**, click **Add users**
+- Enter the **email address(es)** to be used with the extension, then click **Save and Continue**
+
+Update Oauth2 client ID
+- Go to **manifest.json** in the codebase
+- Locate **oauth2 > client_id** and replace with the Oauth2.0 Client ID created earlier
 
 ## Usage
 To use the extension, follow the following steps:
