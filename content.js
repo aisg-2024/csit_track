@@ -1,6 +1,3 @@
-//Initialise with 0 frauds detected
-chrome.action.setBadgeText({ text: "0" })
-
 //Array of gmail IDs used to look up details of each gmail
 var messageIDList;
 //Array of full gmail messages extracted from the messageIDList
@@ -13,64 +10,105 @@ var senderList= [];
 var topicList = [];
 //Array of supporting analysis from GPT for giving fraud decision
 var analysisList = [];
-
 //Main function powering the extraction of email contents and sending them to LLM backend
-chrome.identity.getAuthToken(
-	//Retrieve Oauth2 token for Google user
-	{'interactive': true}, async (token) => {
-		// console.log("Token received: ", token);
-		messageIDList = await fetchGmailList(token);
-		// console.log("Message IDs");
-		// console.log(messageIDList);
-		messageList = await fetchBatch(token, messageIDList, 'batch_taskjet_google_lib_api', 'https://www.googleapis.com/batch/gmail/v1');
-		// console.log("Messages");
-		// console.log(messageList);
-		var totalCount = 0;
-		var fraudCount = 0;
-		messageList.forEach(async function (message) {
-			var responseJson = await sendToLLM(message);
-			// console.log(responseJson);
-			//in JSON response 1 means fraud detected, 0 means no fraud
-			if(parseInt(responseJson.fraudDetected) == 1){
-				fraudCount++;
-				analysisList.push(responseJson.response);
-				senderList.push(extractSender(message));
-				topicList.push(extractTopic(message));
-			}
-			totalCount++;
-			if(totalCount == messageList.length){
-				allEmailAnalysed = true;
-				chrome.action.setBadgeText({ text: fraudCount.toString() });
-				if(fraudCount > 0){
-					chrome.action.setBadgeBackgroundColor({ color: "red" });
-					chrome.action.setBadgeTextColor({ color: "white" });
-				} else {
-					chrome.action.setBadgeBackgroundColor({ color: "green" });
-					chrome.action.setBadgeTextColor({ color: "white" });
+const performLLMCheck = () => {
+	var statusStr = '';
+	document.getElementById("messages").innerHTML = '';
+	//Initialise with 0 frauds detected	
+	chrome.action.setBadgeText({ text: "0" });
+	chrome.action.setBadgeBackgroundColor({ color: "gray" });
+    chrome.identity.getAuthToken(
+    //Retrieve Oauth2 token for Google user
+    {'interactive': true}, async (token) => {
+        console.log("Token received: ", token);
+		statusStr += '<div class = "status-element" id="token-status"><p>Token Received<p></div>';
+		document.getElementById("status-bar").innerHTML = statusStr;
+		try {
+			messageIDList = await fetchGmailList(token);
+			// console.log("Message IDs");
+			console.log(messageIDList);
+			statusStr += '<div class = "status-element" id="gmail-status"><p>Gmails Fetched<p></div>';
+			document.getElementById("status-bar").innerHTML = statusStr;
+			messageList = await fetchBatch(token, messageIDList, 'batch_taskjet_google_lib_api', 'https://www.googleapis.com/batch/gmail/v1');
+			// console.log("Messages");
+			// console.log(messageList);
+			var totalCount = 0;
+			var fraudCount = 0;
+			document.getElementById("messages").innerHTML = '<div class="loader"></div>';
+			messageList.forEach(async function (message) {
+				var responseJson = await sendToLLM(message);
+				console.log(responseJson);
+				//in JSON response 1 means fraud detected, 0 means no fraud
+				if(parseInt(responseJson.fraudDetected) == 1){
+					fraudCount++;
+					analysisList.push(responseJson.response);
+					senderList.push(extractSender(message));
+					topicList.push(extractTopic(message));
 				}
-			}
-		});
+				totalCount++;
+				if(totalCount == messageList.length){
+					messageStr = '';
+					statusStr += '<div class = "status-element" id="llm-status"><p>Analysis Complete<p></div>';
+					document.getElementById("status-bar").innerHTML = statusStr;
+					allEmailAnalysed = true;
+					chrome.action.setBadgeText({ text: fraudCount.toString() });
+					if(fraudCount > 0){
+						chrome.action.setBadgeBackgroundColor({ color: "red" });
+						chrome.action.setBadgeTextColor({ color: "white" });
+					} else {
+						chrome.action.setBadgeBackgroundColor({ color: "green" });
+						chrome.action.setBadgeTextColor({ color: "white" });
+					}
+					if (analysisList.length != 0) {
+						senderList.forEach((sender, index) => {
+							const topic = topicList[index];
+							const analysis = analysisList[index];
+							messageStr += '<div class="apparent-message error-message">' +
+							'<div class="message-container">' +
+								'<div class="apparent-message-icon fa fa-fw fa-2x fa-exclamation-triangle"></div>' +
+									'<div class="content-container">' +
+										'<div class="message-header">' +
+											'<span>Phishing Alert!</span>' +
+										'</div>' +
+										'<div class="message-body">' +
+											'<h6><strong>From:</strong> ' + sender + '</h6>' +
+											'<h6><strong>Topic:</strong> ' + topic + '</h6>' +
+											'<h6><strong>LLM Analysis:</strong></h6>' +
+											'<p>' + analysis + '</p>' +
+										'</div>' +
+									'</div>' +
+								'</div>'+
+							'</div>'+
+						'</div>';
+						});      
+					} else {
+						messageStr += '<div class="apparent-message safe-message">' +
+							'<div class="message-container">' +
+								'<div class="apparent-message-icon fa fa-check-circle"></div>' +
+									'<div class="content-container">' +
+										'<div class="message-header">' +
+											'<span>Your Emails Are Safe!</span>' +
+										'</div>' +
+										'<div class="message-body">' +
+											'<h6><strong>LLM Analysis:</strong></h6>' +
+											'<p>' + safeMessage + '</p>' +
+										'</div>' +
+									'</div>' +
+								'</div>'+
+							'</div>'+
+						'</div>';
+					}
+					document.getElementById("messages").innerHTML = messageStr;
+				}
+			});
+	} catch(error){
+		console.log(error)
+		str = '<div class = "error"></div>'
+		document.getElementById("messages").innerHTML = str;
 	}
-);
-
-/*
-Function that sends the LLM results to popup.js which the html popup is running on
-popup.js initiates a handshake to the background script which the background scipt
-responds with LLM results (or empty array if analysis is yet to complete)
-*/
-chrome.runtime.onMessage.addListener(function(message,sender,sendResponse){
-	if(allEmailAnalysed == false){
-		// chrome.runtime.sendMessage({messages:[]},function(response){
-		// });
-		chrome.runtime.sendMessage({topics:[], senders:[], analysis:[], analysed:false},function(response){
-		});
-	} else {
-		// chrome.runtime.sendMessage({messages:messageList},function(response){
-		// });
-		chrome.runtime.sendMessage({topics:topicList, senders:senderList, analysis:analysisList, analysed:true},function(response){
-		});
-	}
-});
+    }
+    );
+}
 
 /*
 Returns a promise that yields the gmail list requested
@@ -346,7 +384,13 @@ const extractTopic = (message) => {
 	return message.split("Subject: ")[1].split("\n\n")[0].trim();
 }
 
+/*
+Standard message to display when no fraud cases are detected by the LLM
+*/
+const safeMessage = 'Our LLM solution did not detect any potential phishing emails ' +
+                    'among your first 50 unread emails. However, we still encourage you ' +
+                    'to exercise caution when reading your emails as malicious sources may ' +
+                    'deploy new tactics which our LLM have yet to be exposed to and thus may fail at detecting.'
 
-
-
-
+//Monitors for button press to trigger the LLM analysis
+document.getElementById("llmButton").addEventListener("click", performLLMCheck);
