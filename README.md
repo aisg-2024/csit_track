@@ -36,26 +36,34 @@ Unpack and install the extension to chrome:
 - Click on **Load Unpacked** and choose to unpack the entire "csit_track" project folder
 - Take note of the **Extension ID** generated for the LLM Fraud Checker Extension
 
+  In this example, the ID is **pkjpimjdoggfaeeiccemillhpijjpggo**
+
 ![image](https://github.com/aisg-2024/csit_track/assets/111041948/1a227ab2-99f3-4227-ae45-9678c747b8ec)
 
-Add credentials to Gmail API Service
-- Navigate to **Gmail API service** in Google Cloud Console
+Add credentials to Gmail API Service:
+- Open up Google Cloud Console
+- Navigate to **Menu menu > APIs & Services > Credentials**
 - Click on **+ Create Credentials**
-- Choose Oauth2.0 Client ID
+- Choose **Oauth Client ID** as credential type
 - Under application type, choose **Chrome Extension**
-- Under **Item ID**, use the Extension ID obtained from earlier
-- Click **Create**
+- Give the Oauth Client an appropriate name, such as **CSIT LLM Fraud Checker**
+- Under **Item ID**, use the Extension ID obtained from extension bar
+- Skip the optional **Verify app ownership**
+- Click **Create** and wait for successful creation
+- Take note of the **Client ID** generated for the credential, it should be in the format **"(...).apps.googleusercontent.com"**
 
-Configure OAuth consent
+Configure OAuth consent:
 - Navigate to **Menu menu > APIs & Services > OAuth consent screen**.
 - Select **External** user type, then click **Create**
-- Complete the app registration form, then click **Save and Continue**
-- Under **Test users**, click **Add users**
-- Enter the **email address(es)** to be used with the extension, then click **Save and Continue**
+- Under **Oauth Consent Screen**, give the consent app an appropriate name and enter a valid **User support email** and **Developer contact email**
+- Under **Scopes**, click **Add or Remove Scopes**, search for and add the scopes **"https://mail.google.com/"** and **".../auth/gmail.modify"**
+- Under **Test users**, click **Add users** and enter the **email address(es)** of test users whose gmail accounts the extension can have access to 
+- Click **Back to Dashboard**
 
-Update Oauth2 client ID
+Update Oauth2 client ID in codebase:
+- Navigate to the "csit_track" project folder
 - Go to **manifest.json** in the codebase
-- Locate **oauth2 > client_id** and replace with the Oauth2.0 Client ID created earlier
+- Locate **oauth2 > client_id** and replace with the **Client ID** generated under Credentials
 
 ## Usage
 To use the extension, follow the following steps:
