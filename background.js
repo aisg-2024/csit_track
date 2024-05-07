@@ -83,7 +83,7 @@ const fetchGmailList = (token) => {
 			'Content-Type': 'application/json'
 		});
 		const queryParams = { headers };
-		let maxEmailResults = 50;
+		let maxEmailResults = 20;
 		let queryCondition = 'is:unread';
 		let labelID = 'INDEX';
 		//Send GET request to Gmail REST API and retrieve first 50 unread messages
