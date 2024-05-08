@@ -1,14 +1,15 @@
-# LLM Fraud Checker Extension
-The LLM Fraud Checker Extension is a Google Chrome extension which popup page serves as the frontend of our LLM-powered fraud email checker application. 
+# LLM Phishing Email Checker Extension
+The LLM Phishing Email Checker Extension is a Google Chrome extension which side-panel interface serves as the frontend of our LLM-powered phishing email checker application. 
 This extension fetches Gmail messages from a specified Google account using the Gmail API and delivers them to our GPT-3.5-turbo backend server for analysis.
-Once a potential fraud is detected by the backend, the warning is sent back to the extension frontend to be delivered on the popup page.
-Users may then exercise caution when reading these emails in their inbox.
+Once a potential fraud is detected by the backend, the warning is sent back to the extension frontend to be delivered on the interface.
+Users may then exercise caution when reading these emails in their inbox as well as learn of phishing email characteristics.
 
 ## Features
 - Intuitive and simple user interface for displaying detected frauds
 - Batch email posting to LLM backend for efficient http requests
-- LLM analysis displayed to help users understand what entails fraud
-- Triggered with a simple click of the extension
+- Customisable number of emails to be checked by LLM
+- LLM analysis displayed to help users understand what entails phishing emails
+- Triggered with a simple click of a button
 
 ## Prerequisites
 Before you begin, ensure you have met the following requirements:
@@ -70,18 +71,20 @@ To use the extension, follow the following steps:
 
 1) Unpack and install the extension again to reload it
 2) Pin the extension under the accessible extension bar
-3) Open a new page and 
-4) Click on the extension to display the user interface
-5) Wait for the badge on the extension to change colour from grey to either red or green
-- A red badge indicates that potential frauds have been detected and the number of potential frauds is displayed on the badge
-- A green badge indicates that among all the fetched emails no potential frauds have been detected
-4) If the badge changes to red, close and reopen the extension popup to show the flagged emails accompanied by LLM analysis
+3) Open **a new webpage** and **visit a site with a valid link**
+- The extension interface <ins>**will not load**</ins> if the webpage is the default chrome homepage or any chrome extension/store page
+5) Click on the extension to display the user interface
+6) Enter the number of latest unread emails to check through and click **LLM Check**
+-  If 20 was entered in the input area, the LLm will look for phishing emails in the latest 20 unread emails of user's inbox
+6) Wait for the status bar to display **Analysis Complete** and look out for the LLM reply
+- Any red message indicates a fraud is detected and the email details along with the LLM's reasoning are shown
+- A single green message indicates that among all the fetched emails no potential frauds have been detected
+7) If an error message shows, it could indicate a possible API or server problem. Wait for some time before retrying or reach out to us.
 
 ## Under the Hood
 
-The extension is powered by a background worker JS script which is responsible for fetching the first 50 unread gmails from the linked Google account, extracting the necessary information from them, parsing them into a suitable format, and posting them to the LLM backend through batch requests. The response from the LLM backend is then received and processed by this script.
-
-The popup page is served as a HTML page running a separate popup JS script for managing dynamic content. Responses from the LLM backend are sent from the background worker script to this popup script through runtime messages and displayed dynamically on the popup page.
+The extension is powered by a content JS script which is responsible for fetching the latest unread gmails from the user's Google account, extracting the necessary information from them, parsing them into a suitable format, and posting them to the LLM backend through batch requests. The response from the LLM backend is then received and processed by this script. A background worker JS script monitors for user interactions with the extension, and opens the side-panel as an iframe serving a HTML page when user click is detected. The HTML page runs the content JS script to 
+dynamically change its contents as the LLM check progresses.
 
 ## Acknowledgements
 - Google for providing the Gmail API and Oauth Client
