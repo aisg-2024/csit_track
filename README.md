@@ -68,9 +68,11 @@ Update Oauth2 client ID in codebase:
 ## Usage
 To use the extension, follow the following steps:
 
-1) Pin the extension under the accessible extension bar
-2) Click on the extension
-3) Wait for the badge on the extension to change colour from grey to either red or green
+1) Unpack and install the extension again to reload it
+2) Pin the extension under the accessible extension bar
+3) Open a new page and 
+4) Click on the extension to display the user interface
+5) Wait for the badge on the extension to change colour from grey to either red or green
 - A red badge indicates that potential frauds have been detected and the number of potential frauds is displayed on the badge
 - A green badge indicates that among all the fetched emails no potential frauds have been detected
 4) If the badge changes to red, close and reopen the extension popup to show the flagged emails accompanied by LLM analysis
