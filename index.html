@@ -8,6 +8,24 @@
 </head>
 <!--Credits: https://stackoverflow.com/questions/50166443/alert-offset-icon-header-and-body-text-->
 <style>
+  /* Credits to Aaron Iker from https://codepen.io/aaroniker/pen/dybMVMB for input field CSS*/
+  :root {
+    --input-color: #99A3BA;
+    --input-border: #CDD9ED;
+    --input-background: #fff;
+    --input-placeholder: #CBD1DC;
+
+    --input-border-focus: #e0b3b3;
+
+    --group-color: var(--input-color);
+    --group-border: var(--input-border);
+    --group-background: #EEF4FF;
+
+    --group-color-focus: #fff;
+    --group-border-focus: var(--input-border-focus);
+    --group-background-focus: #e2a89b;
+
+    }
     body {
       font-family: Arial, sans-serif;
       background-color: #fcfaf7;
@@ -169,41 +187,89 @@
       background-color: #f7efeb;
       color: rgb(0, 0, 0);
       text-align: center;
+      display: flex;
+      flex-direction:row;
     }
-    button {
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: 12px;
-      font-size: small;
-      background-color: #fffefd;
-      border-radius: 8px;
-      border-style: none;
-      box-sizing: border-box;
-      display: inline-block;
-      font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    .form-field {
+      padding: 8px 16px;
+      font-size: smaller;
       font-weight: 500;
-      height: 40px;
-      line-height: 20px;
-      list-style: none;
-      outline: none;
-      padding: 10px 16px;
-      position: relative;
-      text-align: center;
-      text-decoration: none;
-      transition: color 100ms;
-      vertical-align: baseline;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
+      font-family: inherit;
+      word-wrap: break-word;
+      border-radius: 6px;
+      color: var(--input-color);
+      border: 1px solid var(--input-border);
+      background: var(--input-background);
+      border: 1px solid var(--input-border);
+      transition: border .3s ease;
+      &::placeholder {
+          color: var(--input-placeholder);
+      }
+      &:focus {
+          outline: none;
+          border-color: var(--input-border-focus);
+      }
+  }
+
+  .form-group {
+    margin: 15px;
+    margin-right: 10px;
+    display: flex;
+    flex: 0 1 70px;
+    width: 100%;
+    .form-field {
+        white-space: nowrap;
+        display: block;
+        
+        &:not(:first-child) {
+            margin-left: -1px;
+        }
     }
-    button:hover, button:focus {
-      background-color: #f1eaea;
+    &:focus-within {
+        & > span {
+            color: var(--group-color-focus);
+            background: var(--group-background-focus);
+            border-color: var(--group-border-focus);
+        }
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+  }
+  /* Credits to Dribble from https://getcssscan.com/css-buttons-examples for button CSS*/
+  button {
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 15px;
+    margin-left: 5px;
+    font-size: smaller;
+    background-color: #fffefd;
+    border-radius: 8px;
+    border-style: none;
+    display: flex;
+    font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 500;
+    height: 40px;
+    line-height: 20px;
+    list-style: none;
+    outline: none;
+    padding: 10px 16px;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    transition: color 100ms;
+    vertical-align: baseline;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    color: #1d1818;
+  }
+  button:hover, button:active {
+    background-color: #e9c9c9;
+    color: white;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
   </style>
   <body>
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
@@ -216,7 +282,10 @@
       <div id = "messages">
       </div>
       <div class = "footer">
-        <button id = "llmButton">Perform LLM Phishing Check</button>
+        <div class="form-group">
+            <input class="form-field" placeholder="No. of emails to check" size="16" id="email-number">
+        </div>
+        <button id = "llmButton">LLM Check</button>
       </div>
     </div>
   </body>

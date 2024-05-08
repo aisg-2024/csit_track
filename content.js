@@ -13,6 +13,14 @@ var analysisList = [];
 //Main function powering the extraction of email contents and sending them to LLM backend
 const performLLMCheck = () => {
 	var statusStr = '';
+	var emailNumber = document.getElementById('email-number').value;
+	console.log(emailNumber)
+	//Make sure email number is valid
+	if(emailNumber == '' || emailNumber == null || parseInt(emailNumber) < 0 || parseInt(emailNumber) > 50){
+		alert("Please fill a valid number between 1-50!");
+		document.getElementById('email-number').value = ''
+		return;
+	}
 	document.getElementById("messages").innerHTML = '';
 	//Initialise with 0 frauds detected	
 	chrome.action.setBadgeText({ text: "0" });
@@ -24,7 +32,7 @@ const performLLMCheck = () => {
 		statusStr += '<div class = "status-element" id="token-status"><p>Token Received<p></div>';
 		document.getElementById("status-bar").innerHTML = statusStr;
 		try {
-			messageIDList = await fetchGmailList(token);
+			messageIDList = await fetchGmailList(token, parseInt(emailNumber));
 			// console.log("Message IDs");
 			console.log(messageIDList);
 			statusStr += '<div class = "status-element" id="gmail-status"><p>Gmails Fetched<p></div>';
@@ -99,6 +107,7 @@ const performLLMCheck = () => {
 						'</div>';
 					}
 					document.getElementById("messages").innerHTML = messageStr;
+					document.getElementById('email-number').value = ''
 				}
 			});
 	} catch(error){
@@ -114,14 +123,14 @@ const performLLMCheck = () => {
 Returns a promise that yields the gmail list requested
 Gmail list will be displayed as a list of message IDs
 */
-const fetchGmailList = (token) => {
+const fetchGmailList = (token, emailNumber) => {
 	return new Promise((resolve, reject) => {
 		const headers = new Headers({
 			'Authorization' : 'Bearer ' + token,
 			'Content-Type': 'application/json'
 		});
 		const queryParams = { headers };
-		let maxEmailResults = 20;
+		let maxEmailResults = emailNumber;
 		let queryCondition = 'is:unread';
 		let labelID = 'INDEX';
 		//Send GET request to Gmail REST API and retrieve first 50 unread messages

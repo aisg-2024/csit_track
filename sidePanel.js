@@ -7,6 +7,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender){
     }
 })
 
+// Credits to https://stackoverflow.com/questions/39610205/how-to-make-side-panel-in-chrome-extension
 var iframe = document.createElement('iframe'); 
 iframe.style.height = "100%";
 iframe.style.width = "0px";
