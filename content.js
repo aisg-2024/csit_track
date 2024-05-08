@@ -8,6 +8,8 @@ var allEmailAnalysed = false;
 var senderList= [];
 //Array of topics of emails identified as fraud by GPT
 var topicList = [];
+//Array of phishing score ratings from 1 to 10 given to flagged emails to reflect level of likelihood of real fraud
+var scoreList = [];
 //Array of supporting analysis from GPT for giving fraud decision
 var analysisList = [];
 //Main function powering the extraction of email contents and sending them to LLM backend
@@ -49,7 +51,8 @@ const performLLMCheck = () => {
 				//in JSON response 1 means fraud detected, 0 means no fraud
 				if(parseInt(responseJson.fraudDetected) == 1){
 					fraudCount++;
-					analysisList.push(responseJson.response);
+					analysisList.push(responseJson.result_rationale);
+					scoreList.push(responseJson.phishing_score);
 					senderList.push(extractSender(message));
 					topicList.push(extractTopic(message));
 				}
@@ -71,6 +74,7 @@ const performLLMCheck = () => {
 						senderList.forEach((sender, index) => {
 							const topic = topicList[index];
 							const analysis = analysisList[index];
+							const score = scoreList[index];
 							messageStr += '<div class="apparent-message error-message">' +
 							'<div class="message-container">' +
 								'<div class="apparent-message-icon fa fa-fw fa-2x fa-exclamation-triangle"></div>' +
@@ -79,6 +83,7 @@ const performLLMCheck = () => {
 											'<span>Phishing Alert!</span>' +
 										'</div>' +
 										'<div class="message-body">' +
+										'	<h6><strong>Phishing Score:</strong> ' + score + '</h6>' +
 											'<h6><strong>From:</strong> ' + sender + '</h6>' +
 											'<h6><strong>Topic:</strong> ' + topic + '</h6>' +
 											'<h6><strong>LLM Analysis:</strong></h6>' +
