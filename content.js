@@ -104,7 +104,10 @@ const performLLMCheck = () => {
 										'</div>' +
 										'<div class="message-body">' +
 											'<h6><strong>LLM Analysis:</strong></h6>' +
-											'<p>' + safeMessage + '</p>' +
+											'<p>' + 'Our LLM solution did not detect any potential phishing emails ' +
+											'among your first '+ emailNumber +' unread emails. However, we still encourage you ' +
+											'to exercise caution when reading your emails as malicious sources may ' +
+											'deploy new tactics which our LLM have yet to be exposed to and thus may fail at detecting.' + '</p>' +
 										'</div>' +
 									'</div>' +
 								'</div>'+
@@ -397,14 +400,6 @@ Function that extracts subject from text email message
 const extractTopic = (message) => {
 	return message.split("Subject: ")[1].split("\n\n")[0].trim();
 }
-
-/*
-Standard message to display when no fraud cases are detected by the LLM
-*/
-const safeMessage = 'Our LLM solution did not detect any potential phishing emails ' +
-                    'among your first 50 unread emails. However, we still encourage you ' +
-                    'to exercise caution when reading your emails as malicious sources may ' +
-                    'deploy new tactics which our LLM have yet to be exposed to and thus may fail at detecting.'
 
 //Monitors for button press to trigger the LLM analysis
 document.getElementById("llmButton").addEventListener("click", performLLMCheck);
