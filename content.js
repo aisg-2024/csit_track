@@ -16,7 +16,7 @@ var analysisList = [];
 const performLLMCheck = () => {
 	var statusStr = '';
 	var emailNumber = document.getElementById('email-number').value;
-	console.log(emailNumber)
+	// console.log(emailNumber)
 	//Make sure email number is valid
 	if(emailNumber == '' || emailNumber == null || parseInt(emailNumber) < 0 || parseInt(emailNumber) > 50){
 		alert("Please fill a valid number between 1-50!");
@@ -36,12 +36,12 @@ const performLLMCheck = () => {
 		try {
 			messageIDList = await fetchGmailList(token, parseInt(emailNumber));
 			// console.log("Message IDs");
-			console.log(messageIDList);
+			// console.log(messageIDList);
 			statusStr += '<div class = "status-element" id="gmail-status"><p>Gmails Fetched<p></div>';
 			document.getElementById("status-bar").innerHTML = statusStr;
 			messageList = await fetchBatch(token, messageIDList, 'batch_taskjet_google_lib_api', 'https://www.googleapis.com/batch/gmail/v1');
 			// console.log("Messages");
-			// console.log(messageList);
+			console.log(messageList);
 			var totalCount = 0;
 			var fraudCount = 0;
 			document.getElementById("messages").innerHTML = '<div class="loader"></div>';
@@ -139,7 +139,7 @@ const fetchGmailList = (token, emailNumber) => {
 		});
 		const queryParams = { headers };
 		let maxEmailResults = emailNumber;
-		let queryCondition = 'is:unread';
+		let queryCondition = 'is:unread category:primary';
 		let labelID = 'INDEX';
 		//Send GET request to Gmail REST API and retrieve first 50 unread messages
 		fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults='+maxEmailResults+'&q='+queryCondition, queryParams)
