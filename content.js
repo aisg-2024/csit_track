@@ -270,7 +270,7 @@ const base64_decode = (input) => {
 
 /*
 Decodes a url safe Base64 string to its original representation
-Credit: https://github.com/EmilTholin/gmail-api-parse-message/blob/master/lib/index.js
+Adapted from: https://github.com/EmilTholin/gmail-api-parse-message/blob/master/lib/index.js
 */
 const urlB64Decode = (string) => {
 	return string
