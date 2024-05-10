@@ -220,12 +220,24 @@ const parseBatchResponse = (repsonse) => {
 			const parsedBody = parseMessage(body);
 			var sender = parsedBody.headers.from;
 			var replyTo = parsedBody.headers["reply-to"];
+			if(typeof replyTo==="undefined"){
+				replyTo = sender;
+			}
 			var returnPath = parsedBody.headers["return-path"];
+			if(typeof returnPath==="undefined"){
+				returnPath = sender;
+			}
+			var received = parsedBody.headers["received"];
+			if(typeof received!=="undefined"){
+				// console.log(received)
+				received = received.split("from")[1].split("by")[0].trim();
+			}
 			var subject = parsedBody.headers.subject;
 			var plainText = parsedBody.textPlain;
 			var trimmedMessage = "From: " + sender + "\n\n"
 									+ "Reply to: " + replyTo + "\n\n"
 									+ "Return Path: " + returnPath + "\n\n"
+									+ "Received: " + received + "\n\n"
 									+ "Subject: " + subject + "\n\n"
 									+ plainText;
 			parsedMessages.push(trimmedMessage);
